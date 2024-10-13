@@ -1,0 +1,37 @@
+#!/bin/bash
+
+# Initialize variables
+SCRIPT_DIR="$(dirname "$0")"
+
+VENV_PATH="$SCRIPT_DIR/ai-assist"
+if [ ! -d "$VENV_PATH" ]; then
+    python3 -m venv "$VENV_PATH"
+    source "$VENV_PATH/bin/activate"
+    pip install -r requirements.txt
+else
+    source "$VENV_PATH/bin/activate"
+fi
+
+model="$AI_MODEL"
+prompt="$*"
+
+# Check if prompt is provided
+if [ -z "$prompt" ]; then
+    echo "Error: No prompt provided. Please provide a prompt as the first argument."
+    exit 1
+fi
+
+# If no model is provided, list and select the first running model
+if [ -z "$model" ]; then
+    model=$(ollama list | awk 'NR > 1 {print $1; exit}')
+
+    if [ -z "$model" ]; then
+        echo "No models are available. Exiting."
+        exit 1
+    fi
+fi
+
+# Run the ollama command with the selected or provided model and prompt
+ollama run "$model" "For questions regarding commands include how to install the command, always show examples of how to use the command. For code when using a library or package show the commands to install them. ALWAYS include language in code blocks. Answer the following: $prompt" | python3 "$SCRIPT_DIR/pretty.py"
+
+deactivate
