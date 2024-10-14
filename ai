@@ -11,8 +11,12 @@ if [ ! -d "$VENV_PATH" ]; then
 else
     source "$VENV_PATH/bin/activate"
 fi
+if [ ! -z "$AI_MODEL" ]; then
+    model="$AI_MODEL"
+else
+    model="gem"
+fi
 
-model="$AI_MODEL"
 prompt="$*"
 
 # Check if prompt is provided
@@ -21,17 +25,6 @@ if [ -z "$prompt" ]; then
     exit 1
 fi
 
-# If no model is provided, list and select the first running model
-if [ -z "$model" ]; then
-    model=$(ollama list | awk 'NR > 1 {print $1; exit}')
-
-    if [ -z "$model" ]; then
-        echo "No models are available. Exiting."
-        exit 1
-    fi
-fi
-
-# Run the ollama command with the selected or provided model and prompt
-ollama run "$model" "For questions regarding commands include how to install the command, always show examples of how to use the command. For code when using a library or package show the commands to install them. ALWAYS include language in code blocks. Answer the following: $prompt" | python3 "$SCRIPT_DIR/pretty.py"
-
+cd $SCRIPT_DIR
+python3 ai.py --prompt "$prompt" --model "$model" | python3 pretty.py
 deactivate
